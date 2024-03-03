@@ -13,12 +13,6 @@ class BertDataloader(AbstractDataloader):
         self.mask_prob = args.bert_mask_prob
         self.CLOZE_MASK_TOKEN = self.item_count + 1
 
-        code = args.train_negative_sampler_code
-        train_negative_sampler = negative_sampler_factory(code, self.train, self.val, self.test,
-                                                          self.user_count, self.item_count,
-                                                          args.train_negative_sample_size,
-                                                          args.train_negative_sampling_seed,
-                                                          self.save_folder)
         code = args.test_negative_sampler_code
         test_negative_sampler = negative_sampler_factory(code, self.train, self.val, self.test,
                                                          self.user_count, self.item_count,
@@ -26,7 +20,6 @@ class BertDataloader(AbstractDataloader):
                                                          args.test_negative_sampling_seed,
                                                          self.save_folder)
 
-        self.train_negative_samples = train_negative_sampler.get_negative_samples()
         self.test_negative_samples = test_negative_sampler.get_negative_samples()
 
     @classmethod

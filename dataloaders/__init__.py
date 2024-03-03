@@ -1,10 +1,12 @@
 from datasets import dataset_factory
-from .bert import BertDataloader
+from .bert import BertDataloader, BertTrainDataset, BertEvalDataset
 from .ae import AEDataloader
 
 #
 import pandas as pd
 import pickle
+import random
+import torch
 #
 
 DATALOADERS = {
@@ -13,14 +15,38 @@ DATALOADERS = {
 }
 
 
-def read_data():
-    with open('./datasets/dataset_for_bert4rec.pickle', 'rb') as handle:
+def read_data(prepared_data_path):
+    with open(prepared_data_path, 'rb') as handle:
         dataset = pickle.load(handle)
     return dataset
 
 def dataloader_factory(args):
-    # dataset = dataset_factory(args)  # это инстанс класса ML1MDataset, у него есть self.load_ratings_df(), а у родит абстр класса есть def preprocess(self):, а сам этот инстанс вызвается в даталоадере через load_dataset (который дергает preprocess)
-    data = read_data()
+    data = read_data(args.prepared_data_path)
+
+    train_data = data['train']
+    val_data = data['val']
+    test_data = data['test']
+    umap = data['umap']
+    smap = data['smap']
+
+    train_torch_dataset = BertTrainDataset(
+        u2seq=      train_data,
+        max_len=    args.bert_max_len,
+        mask_prob=  args.bert_mask_prob,
+        mask_token= len(smap) + 1,
+        num_items=  len(smap),
+        rng=        random.Random(args.dataloader_random_seed)
+    )
+    train_torch_dataloader = torch.utils.data.DataLoader(
+        dataset=train_torch_dataset,
+        batch_size=args.train_batch_size,
+        shuffle=True,
+        pin_memory=True
+    )
+
+
+
+
 
     dataloader = BertDataloader(args, data)
     # а вот load_dataset происходит в ините ABC даталоадера. щас пойдем логировать че load_dataset выдает
