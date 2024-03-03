@@ -12,18 +12,24 @@ class AbstractDataloader(metaclass=ABCMeta):
         print("TYPE OF DATASET THAT WAS LOAD_DATASET()-ED INSIDE INIT OF ABC DATALOADER:", type(dataset))
         self.train = dataset['train']
         print("type(self.train): ", type(self.train))
-        print(self.train.keys())
+        print([x for x in self.train.keys()][:5], type([x for x in self.train.keys()][0]))
+        print([x for x in self.train.values()][:5], type([x for x in self.train.values()][0][0]))
         self.val = dataset['val']
         print("type(self.val): ", type(self.val))
-        print(self.val.keys())
+        print([x for x in self.val.keys()][:5])
+        print([x for x in self.val.values()][:5])
         self.test = dataset['test']
         print("type(self.test): ", type(self.test))
-        print(self.test.keys())
-        assert False
+        print([x for x in self.test.keys()][:5])
+        print([x for x in self.test.values()][:5])
         self.umap = dataset['umap']
+        print("umap: ", max([x for x in self.umap]))
         self.smap = dataset['smap']
+        print("smap: ", max([x for x in self.smap]))
         self.user_count = len(self.umap)
+        print(self.user_count)
         self.item_count = len(self.smap)
+        print(self.item_count)
 
     @classmethod
     @abstractmethod

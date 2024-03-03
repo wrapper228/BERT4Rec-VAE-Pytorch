@@ -74,7 +74,9 @@ class BertTrainDataset(data_utils.Dataset):
         self.users = sorted(self.u2seq.keys())
         self.max_len = max_len
         self.mask_prob = mask_prob
+        print("self.mask_prob", self.mask_prob)
         self.mask_token = mask_token
+        print("self.mask_token", self.mask_token)
         self.num_items = num_items
         self.rng = rng
 
@@ -87,22 +89,24 @@ class BertTrainDataset(data_utils.Dataset):
 
         tokens = []
         labels = []
-        for s in seq:
-            prob = self.rng.random()
-            if prob < self.mask_prob:
-                prob /= self.mask_prob
+        for s in seq: # касательно каждого s заполняем токен и лейбл
+            prob = self.rng.random()  # сгенерили для конкретного s вероятность uniform, deterministic
+            if prob < self.mask_prob:  # если prob меньше self.mask_prob == 0.15: TLDR С ВЕРОЯТНОСТЬЮ 80% ЗАПОЛНИМ ТОКЕН МАСКТОКЕНОМ, А НЕ ЭТИМ ITEM INDEX
+                prob /= self.mask_prob  # то сильно бустим, затем...
 
                 if prob < 0.8:
-                    tokens.append(self.mask_token)
+                    tokens.append(self.mask_token)  # если оч слабо то заполняем токен масктокеном - который max(item !INDEX!) + 1 или self.item_count + 1
                 elif prob < 0.9:
-                    tokens.append(self.rng.randint(1, self.num_items))
+                    tokens.append(self.rng.randint(1, self.num_items))  # если попал в маленькое окошко - то рандомно между 1 и self.item_count (== self.num_items) НАХУЯ?
                 else:
-                    tokens.append(s)
+                    tokens.append(s) # emergency(?) вариант, но лэйбл всё равно заполнится ненормальным значением - он заполнится ЭТИМ ITEM INDEX
 
                 labels.append(s)
             else:
                 tokens.append(s)
                 labels.append(0)
+
+        # в итоге каждому
 
         tokens = tokens[-self.max_len:]
         labels = labels[-self.max_len:]
