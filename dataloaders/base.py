@@ -9,9 +9,17 @@ class AbstractDataloader(metaclass=ABCMeta):
         self.rng = random.Random(seed)
         self.save_folder = dataset._get_preprocessed_folder_path()
         dataset = dataset.load_dataset()
+        print("TYPE OF DATASET THAT WAS LOAD_DATASET()-ED INSIDE INIT OF ABC DATALOADER:", type(dataset))
         self.train = dataset['train']
+        print("type(self.train): ", type(self.train))
+        print(self.train.keys())
         self.val = dataset['val']
+        print("type(self.val): ", type(self.val))
+        print(self.val.keys())
         self.test = dataset['test']
+        print("type(self.test): ", type(self.test))
+        print(self.test.keys())
+        assert False
         self.umap = dataset['umap']
         self.smap = dataset['smap']
         self.user_count = len(self.umap)
