@@ -120,6 +120,10 @@ def dataloader_factory(args):
     # get_pytorch_dataloaders -> _get_train_loader -> _get_train_dataset -> return BertTrainDataset(self.train, self.max_len, self.mask_prob, self.CLOZE_MASK_TOKEN, self.item_count, self.rng)
     # а что этот BertTrainDataset делает? Что-то сложное бертовое: разбираемся шо он там делает с каждым s in seq: ...
     # наверное BertEvalDataset тоже что-то страшное делает
+
+    # еблан решил сделать ебланский мув, окей, повторим
+    args.num_items = len(smap)
+
     return train_torch_dataloader, val_torch_dataloader, test_torch_dataloader
 
 # def load_dataframe(file_path):
