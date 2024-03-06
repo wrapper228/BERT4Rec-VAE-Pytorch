@@ -8,7 +8,7 @@ def set_template(args):
         args.dataset_code = 'ml-' + input('Input 1 for ml-1m, 20 for ml-20m: ') + 'm'
         args.min_rating = 0 if args.dataset_code == 'ml-1m' else 4
         args.min_uc = 5
-        args.min_sc = 0
+        args.min_sc = 0  # тут не согласен (статья намекает на 5) но в целом окэй поправимо
         args.split = 'leave_one_out'
 
         args.dataloader_code = 'bert'
@@ -20,7 +20,8 @@ def set_template(args):
         args.train_negative_sampler_code = 'random'
         args.train_negative_sample_size = 0
         args.train_negative_sampling_seed = 0
-        args.test_negative_sampler_code = 'random'
+        # args.test_negative_sampler_code = 'random'
+        args.test_negative_sampler_code = 'popular'
         args.test_negative_sample_size = 100
         args.test_negative_sampling_seed = 98765
 

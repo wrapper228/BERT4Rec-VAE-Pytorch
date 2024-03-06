@@ -1,4 +1,3 @@
-from datasets import dataset_factory
 from .bert import BertDataloader, BertTrainDataset, BertEvalDataset
 from .ae import AEDataloader
 
@@ -10,6 +9,9 @@ import torch
 
 from tqdm import trange
 from collections import Counter
+
+import numpy as np
+from numpy.random import choice
 #
 
 DATALOADERS = {
@@ -23,7 +25,7 @@ def read_data(prepared_data_path):
         dataset = pickle.load(handle)
     return dataset
 
-def dataloader_factory(args):
+def make_dataloaders(args):
     data = read_data(args.prepared_data_path)
 
     train_data = data['train']
@@ -51,13 +53,43 @@ def dataloader_factory(args):
     # пробуем родить вал дс и вал лоадер
 
 
+    # ###
+    # popularity = Counter()
+    # for user in range(len(umap)):
+    #     popularity.update(train_data[user])
+    #     popularity.update(val_data[user])
+    #     popularity.update(test_data[user])
+    # popular_items = sorted(popularity, key=popularity.get, reverse=True)
+    #
+    # negative_samples = {}
+    # print('Sampling negative items')
+    # for user in trange(len(umap)):
+    #     seen = set(train_data[user])
+    #     seen.update(val_data[user])
+    #     seen.update(test_data[user])
+    #
+    #     samples = []
+    #     for item in popular_items:
+    #         if len(samples) == args.test_negative_sample_size:
+    #             break
+    #         if item in seen:
+    #             continue
+    #         samples.append(item)
+    #
+    #     negative_samples[user] = samples
+    # ###
+
     ###
     popularity = Counter()
     for user in range(len(umap)):
         popularity.update(train_data[user])
         popularity.update(val_data[user])
         popularity.update(test_data[user])
-    popular_items = sorted(popularity, key=popularity.get, reverse=True)
+    item_probabilities = {k: v / sum([x for x in popularity.values()]) for k, v in popularity.items()}
+
+    print("PROB CHECK")
+    print(item_probabilities[62])
+    print(item_probabilities[731])
 
     negative_samples = {}
     print('Sampling negative items')
@@ -66,22 +98,19 @@ def dataloader_factory(args):
         seen.update(val_data[user])
         seen.update(test_data[user])
 
-        samples = []
-        for item in popular_items:
-            if len(samples) == args.test_negative_sample_size:
-                break
-            if item in seen:
-                continue
-            samples.append(item)
+        np.random.seed(user)
 
-        negative_samples[user] = samples
+        negative_sampled_interactions = list(choice(list(item_probabilities.keys()), 800, replace=False, p=list(item_probabilities.values())))
+        negative_sampled_interactions = [x for x in negative_sampled_interactions if x not in seen]
+        negative_sampled_interactions = negative_sampled_interactions[:100]
+
+        negative_samples[user] = negative_sampled_interactions
     ###
 
-    # test_negative_sampler = negative_sampler_factory(code, self.train, self.val, self.test,
-    #                                                  self.user_count, self.item_count,
-    #                                                  args.test_negative_sample_size,
-    #                                                  args.test_negative_sampling_seed,
-    #                                                  self.save_folder)
+    print("CHECK")
+    print(negative_samples[0][:9])
+    print(negative_samples[1][:9])
+
 
     val_torch_dataset = BertEvalDataset(
         u2seq=              train_data,
@@ -105,32 +134,7 @@ def dataloader_factory(args):
     test_torch_dataloader = torch.utils.data.DataLoader(test_torch_dataset, batch_size=args.test_batch_size,
                                                        shuffle=False, pin_memory=True)
 
-
-
-
-
-    # dataloader = BertDataloader(args, data)
-    # а вот load_dataset происходит в ините ABC даталоадера. щас пойдем логировать че load_dataset выдает
-    # в ините ABC даталоадера после dataset.load_dataset() создаются словари self.train, self.val, self.test, которые являются датафреймами В ВИДЕ СЛОВАРЕЙ {ЮЗЕР <int>: [АЙТЕМЫ <int>]}, ГДЕ ЗНАЧЕНИЯ В ИНДЕКСАХ А НЕ РЕАЛЬНЫХ АЙДИ
-    # umap и smap - массивы индекс: айди в реальном датасете
-    # к слову, в ините даталоадера никакие даталоадеры реально еще не создаются
-
-
-    # train, val, test = dataloader.get_pytorch_dataloaders()
-    # get_pytorch_dataloaders -> _get_train_loader -> _get_train_dataset -> return BertTrainDataset(self.train, self.max_len, self.mask_prob, self.CLOZE_MASK_TOKEN, self.item_count, self.rng)
-    # а что этот BertTrainDataset делает? Что-то сложное бертовое: разбираемся шо он там делает с каждым s in seq: ...
-    # наверное BertEvalDataset тоже что-то страшное делает
-
     # еблан решил сделать ебланский мув, окей, повторим
     args.num_items = len(smap)
 
     return train_torch_dataloader, val_torch_dataloader, test_torch_dataloader
-
-# def load_dataframe(file_path):
-#     df = pd.read_csv(file_path, sep='::', header=None)
-#     df.columns = ['uid', 'sid', 'rating', 'timestamp']
-#     return df
-#
-# def make_dataloaders(file_path):
-#     df = load_dataframe(file_path)
-
