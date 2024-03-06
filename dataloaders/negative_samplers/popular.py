@@ -5,7 +5,7 @@ from tqdm import trange
 from collections import Counter
 
 
-class PopularNegativeSampler(AbstractNegativeSampler):
+class PopularNegativeSampler(AbstractNegativeSampler): # тупа делает инит переданных аргументов которые я уже разобрал + отвечает за чтение сохраненных негсемплов. а, ещё содержит get_negative_samples, который просто читает с диска
     @classmethod
     def code(cls):
         return 'popular'

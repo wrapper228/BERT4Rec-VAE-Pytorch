@@ -7,7 +7,7 @@ import torch.utils.data as data_utils
 
 class BertDataloader(AbstractDataloader):
     def __init__(self, args, dataset):
-        super().__init__(args, dataset)
+        super().__init__(args, dataset)  # абстр класс считывает аргсы, ранд генератор, папку для говна; остальное - просто data
         args.num_items = len(self.smap)
         self.max_len = args.bert_max_len
         self.mask_prob = args.bert_mask_prob
@@ -20,7 +20,7 @@ class BertDataloader(AbstractDataloader):
                                                          args.test_negative_sampling_seed,
                                                          self.save_folder)
 
-        self.test_negative_samples = test_negative_sampler.get_negative_samples()
+        self.test_negative_samples = test_negative_sampler.get_negative_samples() # тупа словарь user ix: [popular ixes that user has not seen]
 
     @classmethod
     def code(cls):
