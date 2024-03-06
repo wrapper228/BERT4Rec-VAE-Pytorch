@@ -13,12 +13,6 @@ class BertDataloader(AbstractDataloader):
         self.mask_prob = args.bert_mask_prob
         self.CLOZE_MASK_TOKEN = self.item_count + 1
 
-        code = args.train_negative_sampler_code
-        train_negative_sampler = negative_sampler_factory(code, self.train, self.val, self.test,
-                                                          self.user_count, self.item_count,
-                                                          args.train_negative_sample_size,
-                                                          args.train_negative_sampling_seed,
-                                                          self.save_folder)
         code = args.test_negative_sampler_code
         test_negative_sampler = negative_sampler_factory(code, self.train, self.val, self.test,
                                                          self.user_count, self.item_count,
@@ -26,7 +20,6 @@ class BertDataloader(AbstractDataloader):
                                                          args.test_negative_sampling_seed,
                                                          self.save_folder)
 
-        self.train_negative_samples = train_negative_sampler.get_negative_samples()
         self.test_negative_samples = test_negative_sampler.get_negative_samples()
 
     @classmethod
@@ -104,18 +97,26 @@ class BertTrainDataset(data_utils.Dataset):
                 labels.append(s)
             else:
                 tokens.append(s)
-                labels.append(0)
+                labels.append(0)  # !!!ЭТО СТРАННО ВЕДЬ СУЩНОСТЬ S [0, MAX INDEX]!!!
 
-        # в итоге каждому
+        # в итоге каждому s присвоится либо (s, 0) если не замаскирован, либо (mask_token<под вопросом>, s). окей, для чего? !!!ЭТО СТРАННО ВЕДЬ СУЩНОСТЬ S [0, MAX INDEX]!!!
 
+        # видимо max_len это не длина окна подпоследовательности из всей последовательности (если использование такой подпоследовательности ваще в этой реализации будет как-то фигурировать), а то, раньше чего мы 100% забываем
         tokens = tokens[-self.max_len:]
         labels = labels[-self.max_len:]
+        # был 140 - стал 100
+        # был 90 - стал 90
 
+        # тупа паддинг, если изначальный seq был меньше max_len
         mask_len = self.max_len - len(tokens)
 
+        # прилепляем нули слева. почему нули???? !!!ЭТО СТРАННО ВЕДЬ СУЩНОСТЬ S [0, MAX INDEX]!!!
         tokens = [0] * mask_len + tokens
         labels = [0] * mask_len + labels
 
+        # в итоге каждому s присвоится либо (s, 0) если не замаскирован, либо (mask_token<под вопросом>, s) + в начале будут прилеплены нули, если не дотягивает до max_len, или иначе обрублено [-max_len:]. окей, для чего? !!!ЭТО СТРАННО ВЕДЬ СУЩНОСТЬ S [0, MAX INDEX]!!!
+        # tokens    0   0   0   2969, 1574,   957,    1178,   <3707>, 1658,   <3707>, 1117
+        # labels    0   0   0   0     0       0       0       2147    0       3177    0
         return torch.LongTensor(tokens), torch.LongTensor(labels)
 
     def _getseq(self, user):

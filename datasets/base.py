@@ -55,10 +55,14 @@ class AbstractDataset(metaclass=ABCMeta):
         pass
 
     def load_dataset(self):
-        self.preprocess()
-        dataset_path = self._get_preprocessed_dataset_path()
-        dataset = pickle.load(dataset_path.open('rb'))
+        # self.preprocess()
+        # dataset_path = self._get_preprocessed_dataset_path()
+        # dataset = pickle.load(dataset_path.open('rb'))
+        # return dataset
+        with open('./datasets/dataset_for_bert4rec.pickle', 'rb') as handle:
+            dataset = pickle.load(handle)
         return dataset
+
 
     def preprocess(self):
         dataset_path = self._get_preprocessed_dataset_path()
@@ -68,11 +72,11 @@ class AbstractDataset(metaclass=ABCMeta):
         if not dataset_path.parent.is_dir():
             dataset_path.parent.mkdir(parents=True)
         self.maybe_download_raw_dataset()
-        df = self.load_ratings_df()
-        df = self.make_implicit(df)
-        df = self.filter_triplets(df)
-        df, umap, smap = self.densify_index(df)
-        train, val, test = self.split_df(df, len(umap))
+        df = self.load_ratings_df()  # ok
+        df = self.make_implicit(df)  # ok
+        df = self.filter_triplets(df)  # ok
+        df, umap, smap = self.densify_index(df)  # ok
+        train, val, test = self.split_df(df, len(umap))  # помимо сплита эта функция делает преобр в словари; ok
         dataset = {'train': train,
                    'val': val,
                    'test': test,
