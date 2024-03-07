@@ -143,7 +143,7 @@ class BertEvalDataset(data_utils.Dataset):
         negs = self.negative_samples[user]
 
         candidates = answer + negs  # ну понятно, [228] + [142, 1488, 0, ...]
-        labels = [1] * len(answer) + [0] * len(negs),  # сказали что первое позитив, остальное негативы
+        labels = [1] * len(answer) + [0] * len(negs)  # сказали что первое позитив, остальное негативы
 
         seq = seq + [self.mask_token]  # прилепили <3707> в конец. теперь хорошо обученная модель сможет угадать его label
 
