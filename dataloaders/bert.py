@@ -64,7 +64,7 @@ class BertDataloader(AbstractDataloader):
 class BertTrainDataset(data_utils.Dataset):
     def __init__(self, u2seq, max_len, mask_prob, mask_token, num_items, rng):
         self.u2seq = u2seq
-        self.users = sorted(self.u2seq.keys())
+        self.users = sorted(self.u2seq.keys())  # дополнительный "надежный" (с заданным порядком) способ ходить по train_data, в отличие от хождения по train_data по ключу
         self.max_len = max_len
         self.mask_prob = mask_prob
         print("self.mask_prob", self.mask_prob)
@@ -127,7 +127,7 @@ class BertTrainDataset(data_utils.Dataset):
 class BertEvalDataset(data_utils.Dataset):
     def __init__(self, u2seq, u2answer, max_len, mask_token, negative_samples):
         self.u2seq = u2seq
-        self.users = sorted(self.u2seq.keys())
+        self.users = sorted(self.u2seq.keys()) # дополнительный "надежный" (с заданным порядком) способ ходить по train_data, в отличие от хождения по train_data по ключу
         self.u2answer = u2answer
         self.max_len = max_len
         self.mask_token = mask_token
@@ -142,13 +142,19 @@ class BertEvalDataset(data_utils.Dataset):
         answer = self.u2answer[user]
         negs = self.negative_samples[user]
 
-        candidates = answer + negs
-        labels = [1] * len(answer) + [0] * len(negs)
+        candidates = answer + negs  # ну понятно, [228] + [142, 1488, 0, ...]
+        labels = [1] * len(answer) + [0] * len(negs),  # сказали что первое позитив, остальное негативы
 
-        seq = seq + [self.mask_token]
-        seq = seq[-self.max_len:]
+        seq = seq + [self.mask_token]  # прилепили <3707> в конец. теперь хорошо обученная модель сможет угадать его label
+
+        seq = seq[-self.max_len:]  # эти три строки - всё так же как в трейне
         padding_len = self.max_len - len(seq)
         seq = [0] * padding_len + seq
 
         return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels)
+        # например:
+        # seq (в сущности как tokens в трейне)  0   0   2969,   1574,   957,    1178,   2147,   1658,   3177,   1117, <3707>
+        #
+        # candidates: [индекс айтема реального позитива; сгенерированные негативы]
+        # labels:     [1, 0, 0, 0, 0, ...]
 
