@@ -106,6 +106,7 @@ def make_dataloaders(args):
 
         negative_samples[user] = negative_sampled_interactions
     ###
+    # todo: взять negative_samples полученные из АЛСных экспериментов для 100% идентичности замера ndcg@10.
 
     print("CHECK")
     print(negative_samples[0][:9])
@@ -137,4 +138,6 @@ def make_dataloaders(args):
     # еблан решил сделать ебланский мув, окей, повторим
     args.num_items = len(smap)
 
+    # на старте каждой эпохи содержимое батчей, выплевываемых train_torch_dataloader, собирается рандомно по-новому. Но negative_samples рандомно сгенерированы один раз до процесса обучения и не меняются по ходу эпох.
+    # при этом в трейне для последовательности конкретного юзера конечно будут генериться разные маски на разных эпохах.
     return train_torch_dataloader, val_torch_dataloader, test_torch_dataloader

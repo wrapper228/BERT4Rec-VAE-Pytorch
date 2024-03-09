@@ -87,9 +87,11 @@ class BertTrainDataset(data_utils.Dataset):
             if prob < self.mask_prob:  # если prob меньше self.mask_prob == 0.15: TLDR С ВЕРОЯТНОСТЬЮ 80% ЗАПОЛНИМ ТОКЕН МАСКТОКЕНОМ, А НЕ ЭТИМ ITEM INDEX
                 prob /= self.mask_prob  # то сильно бустим, затем...
 
-                if prob < 0.8:
+                # if prob < 0.8:
+                if prob < 0.99:
                     tokens.append(self.mask_token)  # если оч слабо то заполняем токен масктокеном - который max(item !INDEX!) + 1 или self.item_count + 1
-                elif prob < 0.9:
+                # if prob < 0.9:
+                elif prob < 0.999:
                     tokens.append(self.rng.randint(1, self.num_items))  # если попал в маленькое окошко - то рандомно между 1 и self.item_count (== self.num_items) НАХУЯ?
                 else:
                     tokens.append(s) # emergency(?) вариант, но лэйбл всё равно заполнится ненормальным значением - он заполнится ЭТИМ ITEM INDEX
@@ -114,10 +116,18 @@ class BertTrainDataset(data_utils.Dataset):
         tokens = [0] * mask_len + tokens
         labels = [0] * mask_len + labels
 
-        # в итоге каждому s присвоится либо (s, 0) если не замаскирован, либо (mask_token<под вопросом>, s) + в начале будут прилеплены нули, если не дотягивает до max_len, или иначе обрублено [-max_len:]. окей, для чего? !!!ЭТО СТРАННО ВЕДЬ СУЩНОСТЬ S [0, MAX INDEX]!!!
+        # лол ща попробуем маскировать с 10% вероятностью последний айтем
+        prob = self.rng.random()
+        if prob < 0.1:
+            tokens[-1] = self.mask_token
+            labels[-1] = seq[-1]
+
+        # в итоге каждому s присвоится либо (s, 0) если не замаскирован, либо (mask_token<под вопросом><уже не под вопросом>, s) + в начале будут прилеплены нули, если не дотягивает до max_len, или иначе обрублено [-max_len:]. окей, для чего? !!!ЭТО СТРАННО ВЕДЬ СУЩНОСТЬ S [0, MAX INDEX]!!!
         # tokens    0   0   0   2969, 1574,   957,    1178,   <3707>, 1658,   <3707>, 1117
         # labels    0   0   0   0     0       0       0       2147    0       3177    0
         return torch.LongTensor(tokens), torch.LongTensor(labels)
+
+        # КАК ЕЩЁ ЧАСТО ДЕЛАЕТСЯ И КАК ДЕЛАЛОСЬ В СТАТЬЕ: БЕРЕТСЯ СЛУЧАЙНО 10% ЮЗЕРСКИХ ПОСЛЕДОВАТЕЛЬНОСТЕЙ ИЗ ТРЕЙНА И ДЛЯ НИХ ТОЛЬКО ПОСЛЕДНИЙ ТОКЕН ЗАМЕНЯЕТСЯ МАСКОЙ. мы так не делаем, в представленной реализации которую я разбираю такого случайного выбора 10% из трейна (для навешивания маски только на конец) нет.
 
     def _getseq(self, user):
         return self.u2seq[user]
